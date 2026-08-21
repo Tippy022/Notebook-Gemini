@@ -14,8 +14,8 @@ This skill uses a **hybrid authentication approach** that combines the best of b
 Playwright/Patchright has a known bug ([#36139](https://github.com/microsoft/playwright/issues/36139)) where **session cookies** (cookies without an `Expires` attribute) do not persist correctly when using `launch_persistent_context()` with `user_data_dir`.
 
 **What happens:**
-- â Persistent cookies (with `Expires` date) â Saved correctly to browser profile
-- â Session cookies (without `Expires`) â **Lost after browser restarts**
+- Persistent cookies (with `Expires` date) → Saved correctly to browser profile
+- Session cookies (without `Expires`) → **Lost after browser restarts**
 
 **Impact:**
 - Some Google auth cookies are session cookies
@@ -29,7 +29,7 @@ The **MCP Server** (TypeScript) can work around this by passing `storage_state` 
 ```typescript
 // TypeScript - works!
 const context = await chromium.launchPersistentContext(userDataDir, {
-  storageState: "state.json",  // â Loads cookies including session cookies
+  storageState: "state.json", // ← Loads cookies including session cookies
   channel: "chrome"
 });
 ```
@@ -40,7 +40,7 @@ But **Python's Playwright API doesn't support this** ([#14949](https://github.co
 # Python - NOT SUPPORTED!
 context = playwright.chromium.launch_persistent_context(
     user_data_dir=profile_dir,
-    storage_state="state.json",  # â Parameter not available in Python!
+    storage_state="state.json", # ← Parameter not available in Python!
     channel="chrome"
 )
 ```
@@ -63,7 +63,7 @@ context = playwright.chromium.launch_persistent_context(
     channel="chrome"
 )
 # User logs in...
-context.storage_state(path="state.json")  # Save all cookies
+context.storage_state(path="state.json") # Save all cookies
 ```
 
 ### Phase 2: Runtime (`ask_question.py`)
@@ -81,33 +81,33 @@ context = playwright.chromium.launch_persistent_context(
 # Step 2: Manually inject cookies from state.json
 with open("state.json", 'r') as f:
     state = json.load(f)
-    context.add_cookies(state['cookies'])  # â Workaround for session cookies!
+    context.add_cookies(state['cookies']) # ← Workaround for session cookies!
 ```
 
 ## Benefits
 
 | Feature | Our Approach | Pure `user_data_dir` | Pure `storage_state` |
 |---------|--------------|----------------------|----------------------|
-| **Browser Fingerprint Consistency** | â Same across restarts | â Same | â Changes each time |
-| **Session Cookie Persistence** | â Manual injection | â Lost (bug) | â Native support |
-| **Persistent Cookie Persistence** | â Automatic | â Automatic | â Native support |
-| **Google Trust** | â High (same browser) | â High | â Low (new browser) |
-| **Cross-platform Reliability** | â Chrome required | â ï¸ Chromium issues | â Portable |
-| **Cache Performance** | â Keeps cache | â Keeps cache | â No cache |
+| **Browser Fingerprint Consistency** | Same across restarts | Same | Changes each time |
+| **Session Cookie Persistence** | Manual injection | Lost (bug) | Native support |
+| **Persistent Cookie Persistence** | Automatic | Automatic | Native support |
+| **Google Trust** | High (same browser) | High | Low (new browser) |
+| **Cross-platform Reliability** | Chrome required | Chromium issues | Portable |
+| **Cache Performance** | Keeps cache | Keeps cache | No cache |
 
 ## File Structure
 
 ```
 ~/.claude/skills/notebooklm/data/
-âââ auth_info.json              # Metadata about authentication
-âââ browser_state/
-â   âââ state.json             # Cookies + localStorage (for manual injection)
-â   âââ browser_profile/       # Chrome user profile (for fingerprint + cache)
-â       âââ Default/
-â       â   âââ Cookies        # Persistent cookies only (session cookies missing!)
-â       â   âââ Local Storage/
-â       â   âââ Cache/
-â       âââ ...
+├── auth_info.json # Metadata about authentication
+├── browser_state/
+│ ├── state.json # Cookies + localStorage (for manual injection)
+│ └── browser_profile/ # Chrome user profile (for fingerprint + cache)
+│ ├── Default/
+│ │ ├── Cookies # Persistent cookies only (session cookies missing!)
+│ │ ├── Local Storage/
+│ │ └── Cache/
+│ └── ...
 ```
 
 ## Why `state.json` is Critical
@@ -146,7 +146,7 @@ If Playwright adds support for `storage_state` parameter in Python's `launch_per
 # Future (when Python API supports it):
 context = playwright.chromium.launch_persistent_context(
     user_data_dir="browser_profile/",
-    storage_state="state.json",  # â Would handle everything automatically!
+    storage_state="state.json", # ← Would handle everything automatically!
     channel="chrome"
 )
 ```
