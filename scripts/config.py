@@ -16,20 +16,20 @@ LIBRARY_FILE = DATA_DIR / "library.json"
 
 # NotebookLM Selectors
 QUERY_INPUT_SELECTORS = [
-    "textarea.query-box-input",  # Primary
-    'textarea[aria-label="Feld fÃ¼r Anfragen"]',  # Fallback German
-    'textarea[aria-label="Input for queries"]',  # Fallback English
+    "textarea.query-box-input", # Primary
+    'textarea[aria-label="Feld für Anfragen"]', # Fallback German
+    'textarea[aria-label="Input for queries"]', # Fallback English
 ]
 
 RESPONSE_SELECTORS = [
-    ".to-user-container .message-text-content",  # Primary
+    ".to-user-container .message-text-content", # Primary
     "[data-message-author='bot']",
     "[data-message-author='assistant']",
 ]
 
 # Browser Configuration
 BROWSER_ARGS = [
-    '--disable-blink-features=AutomationControlled',  # Patches navigator.webdriver
+    '--disable-blink-features=AutomationControlled', # Patches navigator.webdriver
     '--disable-dev-shm-usage',
     '--no-sandbox',
     '--no-first-run',
