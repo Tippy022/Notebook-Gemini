@@ -15,8 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Timeout increased to 120 seconds** - Long queries no longer timeout prematurely
-  - `ask_question.py`: 30s â 120s
-  - `browser_session.py`: 30s â 120s
+  - `ask_question.py`: 30s → 120s
+  - `browser_session.py`: 30s → 120s
   - Resolves Issue #4
 
 ### Fixed
