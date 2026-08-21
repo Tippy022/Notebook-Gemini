@@ -38,7 +38,7 @@ FOLLOW_UP_REMINDER = (
 
 # Daily quota exhaustion does NOT surface as a clean API-level error. NotebookLM instead
 # answers "Ik kan nu niet reageren" (or the English equivalent) to EVERY question, even
-# trivial ones ("how many sources are in this notebook?") -- which looks exactly like a
+# trivial ones "how many sources are in this notebook?" -- which looks exactly like a
 # content/complexity problem but isn't. The only reliable way to tell the difference is to
 # check the full page text for the quota-limit banner it renders at the bottom of the chat.
 QUOTA_EXHAUSTED_MARKERS = [
@@ -73,11 +73,11 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
     auth = AuthManager()
 
     if not auth.is_authenticated():
-        print("â ï¸ Not authenticated. Run: python auth_manager.py setup")
+        print("⚠️ Not authenticated. Run: python auth_manager.py setup")
         return None
 
-    print(f"ð¬ Asking: {question}")
-    print(f"ð Notebook: {notebook_url}")
+    print(f"💬 Asking: {question}")
+    print(f"📚 Notebook: {notebook_url}")
 
     playwright = None
     context = None
@@ -94,7 +94,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
 
         # Navigate to notebook
         page = context.new_page()
-        print("  ð Opening notebook...")
+        print("  🌐 Opening notebook...")
         page.goto(notebook_url, wait_until="domcontentloaded")
 
         # Wait for NotebookLM
@@ -118,7 +118,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
             pass
 
         # Wait for query input (MCP approach)
-        print("  â³ Waiting for query input...")
+        print("  ⏳ Waiting for query input...")
         query_element = None
 
         for selector in QUERY_INPUT_SELECTORS:
@@ -129,31 +129,31 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
                     state="visible"  # Only check visibility, not disabled!
                 )
                 if query_element:
-                    print(f"  â Found input: {selector}")
+                    print(f"  ✓ Found input: {selector}")
                     break
             except:
                 continue
 
         if not query_element:
-            print("  â Could not find query input")
+            print("  ❌ Could not find query input")
             return None
 
         # Type question (human-like, fast)
-        print("  â³ Typing question...")
+        print("  ⏳ Typing question...")
         
         # Use primary selector for typing
         input_selector = QUERY_INPUT_SELECTORS[0]
         StealthUtils.human_type(page, input_selector, question)
 
         # Submit
-        print("  ð¤ Submitting...")
+        print("  📤 Submitting...")
         page.keyboard.press("Enter")
 
         # Small pause
         StealthUtils.random_delay(500, 1500)
 
         # Wait for response (MCP approach: poll for stable text)
-        print("  â³ Waiting for answer...")
+        print("  ⏳ Waiting for answer...")
 
         answer = None
         stable_count = 0
@@ -198,7 +198,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
 
         if not answer:
             if _check_quota_exhausted(page):
-                print("  â ï¸ Daily chat limit reached (not a content/complexity problem)")
+                print("  ⚠️ Daily chat limit reached (not a content/complexity problem)")
                 return (
                     "NOTEBOOKLM DAILY QUOTA EXHAUSTED: You have reached today's chat limit "
                     "for this Google account. This is not a problem with the question -- "
@@ -207,13 +207,13 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
                     "the quota is exhausted and, if there's a local knowledge cache for this "
                     "notebook, check that first instead."
                 )
-            print("  â Timeout waiting for answer")
+            print("  ❌ Timeout waiting for answer")
             return None
 
         # A stable answer can still just be the quota-exhaustion message rather than a real
         # reply -- catch that case too, since it looks identical to a normal short answer.
         if _check_quota_exhausted(page):
-            print("  â ï¸ Daily chat limit reached (not a content/complexity problem)")
+            print("  ⚠️ Daily chat limit reached (not a content/complexity problem)")
             return (
                 "NOTEBOOKLM DAILY QUOTA EXHAUSTED: You have reached today's chat limit "
                 "for this Google account. This is not a problem with the question -- "
@@ -223,12 +223,12 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
                 "notebook, check that first instead."
             )
 
-        print("  â Got answer!")
+        print("  ✅ Got answer!")
         # Add follow-up reminder to encourage Claude to ask more questions
         return answer + FOLLOW_UP_REMINDER
 
     except Exception as e:
-        print(f"  â Error: {e}")
+        print(f"  ❌ Error: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -268,7 +268,7 @@ def main():
         if notebook:
             notebook_url = notebook['url']
         else:
-            print(f"â Notebook '{args.notebook_id}' not found")
+            print(f"❌ Notebook '{args.notebook_id}' not found")
             return 1
 
     if not notebook_url:
@@ -278,19 +278,19 @@ def main():
         if active:
             notebook_url = active['url']
             resolved_notebook_id = active.get('id')
-            print(f"ð Using active notebook: {active['name']}")
+            print(f"📚 Using active notebook: {active['name']}")
         else:
             # Show available notebooks
             notebooks = library.list_notebooks()
             if notebooks:
-                print("\nð Available notebooks:")
+                print("\n📚 Available notebooks:")
                 for nb in notebooks:
                     mark = " [ACTIVE]" if nb.get('id') == library.active_notebook_id else ""
                     print(f"  {nb['id']}: {nb['name']}{mark}")
                 print("\nSpecify with --notebook-id or set active:")
                 print("python scripts/run.py notebook_manager.py activate --id ID")
             else:
-                print("â No notebooks in library. Add one first:")
+                print("❌ No notebooks in library. Add one first:")
                 print("python scripts/run.py notebook_manager.py add --url URL --name NAME --description DESC --topics TOPICS")
             return 1
 
@@ -302,13 +302,13 @@ def main():
         cache_path = Path(__file__).parent.parent / "data" / "notes" / f"{resolved_notebook_id}.md"
         if cache_path.exists():
             print(
-                f"\nâ ï¸  LOCAL CACHE EXISTS for this notebook: {cache_path}\n"
+                f"\n⚠️  LOCAL CACHE EXISTS for this notebook: {cache_path}\n"
                 f"    If you have not already read it, STOP and read it first -- it may "
                 f"already have this answer without spending quota.\n"
             )
         else:
             print(
-                f"\nâ¹ï¸  No local cache yet for this notebook (would be: {cache_path}).\n"
+                f"\nℹ️  No local cache yet for this notebook (would be: {cache_path}).\n"
                 f"    After this answer, consider creating one so future sessions don't "
                 f"have to re-ask the same things.\n"
             )
@@ -330,7 +330,7 @@ def main():
         print("=" * 60)
         return 0
     else:
-        print("\nâ Failed to get answer")
+        print("\n❌ Failed to get answer")
         return 1
 
 
