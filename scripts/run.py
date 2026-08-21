@@ -9,19 +9,17 @@ import sys
 import subprocess
 from pathlib import Path
 
-
 def get_venv_python():
     """Get the virtual environment Python executable"""
     skill_dir = Path(__file__).parent.parent
     venv_dir = skill_dir / ".venv"
 
-    if os.name == 'nt':  # Windows
+    if os.name == 'nt': # Windows
         venv_python = venv_dir / "Scripts" / "python.exe"
-    else:  # Unix/Linux/Mac
+    else: # Unix/Linux/Mac
         venv_python = venv_dir / "bin" / "python"
 
     return venv_python
-
 
 def ensure_venv():
     """Ensure virtual environment exists"""
@@ -31,30 +29,29 @@ def ensure_venv():
 
     # Check if venv exists
     if not venv_dir.exists():
-        print("ð§ First-time setup: Creating virtual environment...")
-        print("   This may take a minute...")
+        print(" First-time setup: Creating virtual environment...")
+        print(" This may take a minute...")
 
         # Run setup with system Python
         result = subprocess.run([sys.executable, str(setup_script)])
         if result.returncode != 0:
-            print("â Failed to set up environment")
+            print(" Failed to set up environment")
             sys.exit(1)
 
-        print("â Environment ready!")
+        print(" Environment ready!")
 
     return get_venv_python()
-
 
 def main():
     """Main runner"""
     if len(sys.argv) < 2:
         print("Usage: python run.py <script_name> [args...]")
         print("\nAvailable scripts:")
-        print("  ask_question.py    - Query NotebookLM")
-        print("  notebook_manager.py - Manage notebook library")
-        print("  session_manager.py  - Manage sessions")
-        print("  auth_manager.py     - Handle authentication")
-        print("  cleanup_manager.py  - Clean up skill data")
+        print(" ask_question.py - Query NotebookLM")
+        print(" notebook_manager.py - Manage notebook library")
+        print(" session_manager.py - Manage sessions")
+        print(" auth_manager.py - Handle authentication")
+        print(" cleanup_manager.py - Clean up skill data")
         sys.exit(1)
 
     script_name = sys.argv[1]
@@ -63,7 +60,7 @@ def main():
     # Handle both "scripts/script.py" and "script.py" formats
     if script_name.startswith('scripts/'):
         # Remove the scripts/ prefix if provided
-        script_name = script_name[8:]  # len('scripts/') = 8
+        script_name = script_name[8:] # len('scripts/') = 8
 
     # Ensure .py extension
     if not script_name.endswith('.py'):
@@ -74,10 +71,10 @@ def main():
     script_path = skill_dir / "scripts" / script_name
 
     if not script_path.exists():
-        print(f"â Script not found: {script_name}")
-        print(f"   Working directory: {Path.cwd()}")
-        print(f"   Skill directory: {skill_dir}")
-        print(f"   Looked for: {script_path}")
+        print(f" Script not found: {script_name}")
+        print(f" Working directory: {Path.cwd()}")
+        print(f" Skill directory: {skill_dir}")
+        print(f" Looked for: {script_path}")
         sys.exit(1)
 
     # Ensure venv exists and get Python executable
@@ -91,12 +88,11 @@ def main():
         result = subprocess.run(cmd)
         sys.exit(result.returncode)
     except KeyboardInterrupt:
-        print("\nâ ï¸ Interrupted by user")
+        print("\n Interrupted by user")
         sys.exit(130)
     except Exception as e:
-        print(f"â Error: {e}")
+        print(f" Error: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
