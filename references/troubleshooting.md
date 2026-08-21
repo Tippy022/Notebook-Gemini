@@ -1,309 +1,376 @@
-# NotebookLM Skill API Reference
+# NotebookLM Skill Troubleshooting Guide
 
-Complete API documentation for all NotebookLM skill modules.
+## Quick Fix Table
 
-## Important: Always Use run.py Wrapper
+| Error | Solution |
+|-------|----------|
+| ModuleNotFoundError | Use `python scripts/run.py [script].py` |
+| Authentication failed | Browser must be visible for setup |
+| Browser crash | `python scripts/run.py cleanup_manager.py --preserve-library` |
+| Rate limit hit | Wait 1 hour or switch accounts |
+| Notebook not found | `python scripts/run.py notebook_manager.py list` |
+| Script not working | Always use run.py wrapper |
 
-**All commands must use the `run.py` wrapper to ensure proper environment:**
+## Critical: Always Use run.py
+
+Most issues are solved by using the run.py wrapper:
 
 ```bash
-# â CORRECT:
-python scripts/run.py [script_name].py [arguments]
+# CORRECT - Always:
+python scripts/run.py auth_manager.py status
+python scripts/run.py ask_question.py --question "..."
 
-# â WRONG:
-python scripts/[script_name].py [arguments]  # Will fail without venv!
+# WRONG - Never:
+python scripts/auth_manager.py status # ModuleNotFoundError!
 ```
 
-## Core Scripts
+## Common Issues and Solutions
 
-### ask_question.py
-Query NotebookLM with automated browser interaction.
+### Authentication Issues
 
-```bash
-# Basic usage
-python scripts/run.py ask_question.py --question "Your question"
-
-# With specific notebook
-python scripts/run.py ask_question.py --question "..." --notebook-id notebook-id
-
-# With direct URL
-python scripts/run.py ask_question.py --question "..." --notebook-url "https://..."
-
-# Show browser (debugging)
-python scripts/run.py ask_question.py --question "..." --show-browser
+#### Not authenticated error
+```
+Error: Not authenticated. Please run auth setup first.
 ```
 
-**Parameters:**
-- `--question` (required): Question to ask
-- `--notebook-id`: Use notebook from library
-- `--notebook-url`: Use URL directly
-- `--show-browser`: Make browser visible
-
-**Returns:** Answer text with follow-up prompt appended
-
-### notebook_manager.py
-Manage notebook library with CRUD operations.
-
+**Solution:**
 ```bash
-# Smart Add (discover content first)
-python scripts/run.py ask_question.py --question "What is the content of this notebook? What topics are covered? Provide a complete overview briefly and concisely" --notebook-url "[URL]"
-# Then add with discovered info
-python scripts/run.py notebook_manager.py add \
-  --url "https://notebooklm.google.com/notebook/..." \
-  --name "Name" \
-  --description "Description" \
-  --topics "topic1,topic2"
-
-# Direct add (when you know the content)
-python scripts/run.py notebook_manager.py add \
-  --url "https://notebooklm.google.com/notebook/..." \
-  --name "Name" \
-  --description "What it contains" \
-  --topics "topic1,topic2"
-
-# List notebooks
-python scripts/run.py notebook_manager.py list
-
-# Search notebooks
-python scripts/run.py notebook_manager.py search --query "keyword"
-
-# Activate notebook
-python scripts/run.py notebook_manager.py activate --id notebook-id
-
-# Remove notebook
-python scripts/run.py notebook_manager.py remove --id notebook-id
-
-# Show statistics
-python scripts/run.py notebook_manager.py stats
-```
-
-**Commands:**
-- `add`: Add notebook (requires --url, --name, --topics)
-- `list`: Show all notebooks
-- `search`: Find notebooks by keyword
-- `activate`: Set default notebook
-- `remove`: Delete from library
-- `stats`: Display library statistics
-
-### auth_manager.py
-Handle Google authentication and browser state.
-
-```bash
-# Setup (browser visible for login)
-python scripts/run.py auth_manager.py setup
-
 # Check status
 python scripts/run.py auth_manager.py status
 
-# Re-authenticate
-python scripts/run.py auth_manager.py reauth
+# Setup authentication (browser MUST be visible!)
+python scripts/run.py auth_manager.py setup
+# User must manually log in to Google
 
-# Clear authentication
-python scripts/run.py auth_manager.py clear
+# If setup fails, try re-authentication
+python scripts/run.py auth_manager.py reauth
 ```
 
-**Commands:**
-- `setup`: Initial authentication (browser MUST be visible)
-- `status`: Check if authenticated
-- `reauth`: Clear and re-setup
-- `clear`: Remove all auth data
-
-### cleanup_manager.py
-Clean skill data with preservation options.
-
+#### Authentication expires frequently
+**Solution:**
 ```bash
-# Preview cleanup
-python scripts/run.py cleanup_manager.py
+# Clear old authentication
+python scripts/run.py cleanup_manager.py --preserve-library
 
-# Execute cleanup
-python scripts/run.py cleanup_manager.py --confirm
+# Fresh authentication setup
+python scripts/run.py auth_manager.py setup --timeout 15
 
-# Keep library
+# Use persistent browser profile
+export PERSIST_AUTH=true
+```
+
+#### Google blocks automated login
+**Solution:**
+1. Use dedicated Google account for automation
+2. Enable "Less secure app access" if available
+3. ALWAYS use visible browser:
+```bash
+python scripts/run.py auth_manager.py setup
+# Browser MUST be visible - user logs in manually
+# NO headless parameter exists - use --show-browser for debugging
+```
+
+### Browser Issues
+
+#### Browser crashes or hangs
+```
+TimeoutError: Waiting for selector failed
+```
+
+**Solution:**
+```bash
+# Kill hanging processes
+pkill -f chromium
+pkill -f chrome
+
+# Clean browser state
 python scripts/run.py cleanup_manager.py --confirm --preserve-library
 
-# Force without prompt
-python scripts/run.py cleanup_manager.py --confirm --force
+# Re-authenticate
+python scripts/run.py auth_manager.py reauth
 ```
 
-**Options:**
-- `--confirm`: Actually perform cleanup
-- `--preserve-library`: Keep notebook library
-- `--force`: Skip confirmation prompt
-
-### run.py
-Script wrapper that handles environment setup.
-
+#### Browser not found error
+**Solution:**
 ```bash
-# Usage
-python scripts/run.py [script_name].py [arguments]
-
-# Examples
+# Install Chromium via run.py (automatic)
 python scripts/run.py auth_manager.py status
-python scripts/run.py ask_question.py --question "..."
+# run.py will install Chromium automatically
+
+# Or manual install if needed
+cd ~/.claude/skills/notebooklm
+source .venv/bin/activate
+python -m patchright install chromium
 ```
 
-**Automatic actions:**
-1. Creates `.venv` if missing
-2. Installs dependencies
-3. Activates environment
-4. Executes target script
+### Rate Limiting
 
-## Python API Usage
+#### Rate limit exceeded (50 queries/day)
+**Solutions:**
 
-### Using subprocess with run.py
+**Option 1: Wait**
+```bash
+# Check when limit resets (usually midnight PST)
+date -d "tomorrow 00:00 PST"
+```
 
+**Option 2: Switch accounts**
+```bash
+# Clear current auth
+python scripts/run.py auth_manager.py clear
+
+# Login with different account
+python scripts/run.py auth_manager.py setup
+```
+
+**Option 3: Rotate accounts**
 ```python
-import subprocess
-import json
-
-# Always use run.py wrapper
-result = subprocess.run([
-    "python", "scripts/run.py", "ask_question.py",
-    "--question", "Your question",
-    "--notebook-id", "notebook-id"
-], capture_output=True, text=True)
-
-answer = result.stdout
+# Use multiple accounts
+accounts = ["account1", "account2"]
+for account in accounts:
+    # Switch account on rate limit
+    subprocess.run(["python", "scripts/run.py", "auth_manager.py", "reauth"])
 ```
 
-### Direct imports (after venv exists)
+### Notebook Access Issues
 
+#### Notebook not found
+**Solution:**
+```bash
+# List all notebooks
+python scripts/run.py notebook_manager.py list
+
+# Search for notebook
+python scripts/run.py notebook_manager.py search --query "keyword"
+
+# Add notebook if missing
+python scripts/run.py notebook_manager.py add \
+  --url "https://notebooklm.google.com/..." \
+  --name "Name" \
+  --topics "topics"
+```
+
+#### Access denied to notebook
+**Solution:**
+1. Check if notebook is still shared publicly
+2. Re-add notebook with updated URL
+3. Verify correct Google account is used
+
+#### Wrong notebook being used
+**Solution:**
+```bash
+# Check active notebook
+python scripts/run.py notebook_manager.py list | grep "active"
+
+# Activate correct notebook
+python scripts/run.py notebook_manager.py activate --id correct-id
+```
+
+### Virtual Environment Issues
+
+#### ModuleNotFoundError
+```
+ModuleNotFoundError: No module named 'patchright'
+```
+
+**Solution:**
+```bash
+# ALWAYS use run.py - it handles venv automatically!
+python scripts/run.py [any_script].py
+
+# run.py will:
+# 1. Create .venv if missing
+# 2. Install dependencies
+# 3. Run the script
+```
+
+#### Wrong Python version
+**Solution:**
+```bash
+# Check Python version (needs 3.8+)
+python --version
+
+# If wrong version, specify correct Python
+python3.8 scripts/run.py auth_manager.py status
+```
+
+### Network Issues
+
+#### Connection timeouts
+**Solution:**
+```bash
+# Increase timeout
+export TIMEOUT_SECONDS=60
+
+# Check connectivity
+ping notebooklm.google.com
+
+# Use proxy if needed
+export HTTP_PROXY=http://proxy:port
+export HTTPS_PROXY=http://proxy:port
+```
+
+### Data Issues
+
+#### Corrupted notebook library
+```
+JSON decode error when listing notebooks
+```
+
+**Solution:**
+```bash
+# Backup current library
+cp ~/.claude/skills/notebooklm/data/library.json library.backup.json
+
+# Reset library
+rm ~/.claude/skills/notebooklm/data/library.json
+
+# Re-add notebooks
+python scripts/run.py notebook_manager.py add --url ... --name ...
+```
+
+#### Disk space full
+**Solution:**
+```bash
+# Check disk usage
+df -h ~/.claude/skills/notebooklm/data/
+
+# Clean up
+python scripts/run.py cleanup_manager.py --confirm --preserve-library
+```
+
+## Debugging Techniques
+
+### Enable verbose logging
+```bash
+export DEBUG=true
+export LOG_LEVEL=DEBUG
+python scripts/run.py ask_question.py --question "Test" --show-browser
+```
+
+### Test individual components
+```bash
+# Test authentication
+python scripts/run.py auth_manager.py status
+
+# Test notebook access
+python scripts/run.py notebook_manager.py list
+
+# Test browser launch
+python scripts/run.py ask_question.py --question "test" --show-browser
+```
+
+### Save screenshots on error
+Add to scripts for debugging:
 ```python
-# Only works if venv is already created and activated
-from notebook_manager import NotebookLibrary
-from auth_manager import AuthManager
-
-library = NotebookLibrary()
-notebooks = library.list_notebooks()
-
-auth = AuthManager()
-is_auth = auth.is_authenticated()
+try:
+    # Your code
+except Exception as e:
+    page.screenshot(path=f"error_{timestamp}.png")
+    raise e
 ```
 
-## Data Storage
+## Recovery Procedures
 
-Location: `~/.claude/skills/noteboolm/data/`
+### Complete reset
+```bash
+#!/bin/bash
+# Kill processes
+pkill -f chromium
 
-```
-data/
-âââ library.json       # Notebook metadata
-âââ auth_info.json     # Auth status
-âââ browser_state/     # Browser cookies
-    âââ state.json
-```
+# Backup library if exists
+if [ -f ~/.claude/skills/notebooklm/data/library.json ]; then
+    cp ~/.claude/skills/notebooklm/data/library.json ~/library.backup.json
+fi
 
-**Security:** Protected by `.gitignore`, never commit.
+# Clean everything
+cd ~/.claude/skills/notebooklm
+python scripts/run.py cleanup_manager.py --confirm --force
 
-## Environment Variables
+# Remove venv
+rm -rf .venv
 
-Optional `.env` file configuration:
+# Reinstall (run.py will handle this)
+python scripts/run.py auth_manager.py setup
 
-```env
-HEADLESS=false           # Browser visibility
-SHOW_BROWSER=false       # Default display
-STEALTH_ENABLED=true     # Human behavior
-TYPING_WPM_MIN=160       # Typing speed
-TYPING_WPM_MAX=240
-DEFAULT_NOTEBOOK_ID=     # Default notebook
-```
-
-## Error Handling
-
-Common patterns:
-
-```python
-# Using run.py prevents most errors
-result = subprocess.run([
-    "python", "scripts/run.py", "ask_question.py",
-    "--question", "Question"
-], capture_output=True, text=True)
-
-if result.returncode != 0:
-    error = result.stderr
-    if "rate limit" in error.lower():
-        # Wait or switch accounts
-        pass
-    elif "not authenticated" in error.lower():
-        # Run auth setup
-        subprocess.run(["python", "scripts/run.py", "auth_manager.py", "setup"])
+# Restore library if backup exists
+if [ -f ~/library.backup.json ]; then
+    mkdir -p ~/.claude/skills/notebooklm/data/
+    cp ~/library.backup.json ~/.claude/skills/notebooklm/data/library.json
+fi
 ```
 
-## Rate Limits
+### Partial recovery (keep data)
+```bash
+# Keep auth and library, fix execution
+cd ~/.claude/skills/notebooklm
+rm -rf .venv
 
-Free Google accounts: 50 queries/day
-
-Solutions:
-1. Wait for reset (midnight PST)
-2. Switch accounts with `reauth`
-3. Use multiple Google accounts
-
-## Advanced Patterns
-
-### Parallel Queries
-
-```python
-import concurrent.futures
-import subprocess
-
-def query(question, notebook_id):
-    result = subprocess.run([
-        "python", "scripts/run.py", "ask_question.py",
-        "--question", question,
-        "--notebook-id", notebook_id
-    ], capture_output=True, text=True)
-    return result.stdout
-
-# Run multiple queries simultaneously
-with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-    futures = [
-        executor.submit(query, q, nb)
-        for q, nb in zip(questions, notebooks)
-    ]
-    results = [f.result() for f in futures]
+# run.py will recreate venv automatically
+python scripts/run.py auth_manager.py status
 ```
 
-### Batch Processing
+## Error Messages Reference
 
-```python
-def batch_research(questions, notebook_id):
-    results = []
-    for question in questions:
-        result = subprocess.run([
-            "python", "scripts/run.py", "ask_question.py",
-            "--question", question,
-            "--notebook-id", notebook_id
-        ], capture_output=True, text=True)
-        results.append(result.stdout)
-        time.sleep(2)  # Avoid rate limits
-    return results
+### Authentication Errors
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Not authenticated | No valid auth | `run.py auth_manager.py setup` |
+| Authentication expired | Session old | `run.py auth_manager.py reauth` |
+| Invalid credentials | Wrong account | Check Google account |
+| 2FA required | Security challenge | Complete in visible browser |
+
+### Browser Errors
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Browser not found | Chromium missing | Use run.py (auto-installs) |
+| Connection refused | Browser crashed | Kill processes, restart |
+| Timeout waiting | Page slow | Increase timeout |
+| Context closed | Browser terminated | Check logs for crashes |
+
+### Notebook Errors
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Notebook not found | Invalid ID | `run.py notebook_manager.py list` |
+| Access denied | Not shared | Re-share in NotebookLM |
+| Invalid URL | Wrong format | Use full NotebookLM URL |
+| No active notebook | None selected | `run.py notebook_manager.py activate` |
+
+## Prevention Tips
+
+1. **Always use run.py** - Prevents 90% of issues
+2. **Regular maintenance** - Clear browser state weekly
+3. **Monitor queries** - Track daily count to avoid limits
+4. **Backup library** - Export notebook list regularly
+5. **Use dedicated account** - Separate Google account for automation
+
+## Getting Help
+
+### Diagnostic information to collect
+```bash
+# System info
+python --version
+cd ~/.claude/skills/notebooklm
+ls -la
+
+# Skill status
+python scripts/run.py auth_manager.py status
+python scripts/run.py notebook_manager.py list | head -5
+
+# Check data directory
+ls -la ~/.claude/skills/notebooklm/data/
 ```
 
-## Module Classes
+### Common questions
 
-### NotebookLibrary
-- `add_notebook(url, name, topics)`
-- `list_notebooks()`
-- `search_notebooks(query)`
-- `get_notebook(notebook_id)`
-- `activate_notebook(notebook_id)`
-- `remove_notebook(notebook_id)`
+**Q: Why doesn't this work in Claude web UI?**
+A: Web UI has no network access. Use local Claude Code.
 
-### AuthManager
-- `is_authenticated()`
-- `setup_auth(headless=False)`
-- `get_auth_info()`
-- `clear_auth()`
-- `validate_auth()`
+**Q: Can I use multiple Google accounts?**
+A: Yes, use `run.py auth_manager.py reauth` to switch.
 
-### BrowserSession (internal)
-- Handles browser automation
-- Manages stealth behavior
-- Not intended for direct use
+**Q: How to increase rate limit?**
+A: Use multiple accounts or upgrade to Google Workspace.
 
-## Best Practices
-
-1. **Always use run.py** - Ensures environment
-2. **Check auth first** - Before operations
-3. **Handle rate limits** - Implement retries
-4. **Include context** - Questions are independent
-5. **Clean sessions** - Use cleanup_manager
+**Q: Is this safe for my Google account?**
+A: Use dedicated account for automation. Only accesses NotebookLM.
