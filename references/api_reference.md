@@ -7,11 +7,11 @@ Complete API documentation for all NotebookLM skill modules.
 **All commands must use the `run.py` wrapper to ensure proper environment:**
 
 ```bash
-# â CORRECT:
+# CORRECT:
 python scripts/run.py [script_name].py [arguments]
 
-# â WRONG:
-python scripts/[script_name].py [arguments]  # Will fail without venv!
+# WRONG:
+python scripts/[script_name].py [arguments] # Will fail without venv!
 ```
 
 ## Core Scripts
@@ -186,10 +186,10 @@ Location: `~/.claude/skills/noteboolm/data/`
 
 ```
 data/
-âââ library.json       # Notebook metadata
-âââ auth_info.json     # Auth status
-âââ browser_state/     # Browser cookies
-    âââ state.json
+├── library.json # Notebook metadata
+├── auth_info.json # Auth status
+└── browser_state/ # Browser cookies
+    └── state.json
 ```
 
 **Security:** Protected by `.gitignore`, never commit.
@@ -199,12 +199,12 @@ data/
 Optional `.env` file configuration:
 
 ```env
-HEADLESS=false           # Browser visibility
-SHOW_BROWSER=false       # Default display
-STEALTH_ENABLED=true     # Human behavior
-TYPING_WPM_MIN=160       # Typing speed
+HEADLESS=false # Browser visibility
+SHOW_BROWSER=false # Default display
+STEALTH_ENABLED=true # Human behavior
+TYPING_WPM_MIN=160 # Typing speed
 TYPING_WPM_MAX=240
-DEFAULT_NOTEBOOK_ID=     # Default notebook
+DEFAULT_NOTEBOOK_ID= # Default notebook
 ```
 
 ## Error Handling
@@ -274,7 +274,7 @@ def batch_research(questions, notebook_id):
             "--notebook-id", notebook_id
         ], capture_output=True, text=True)
         results.append(result.stdout)
-        time.sleep(2)  # Avoid rate limits
+        time.sleep(2) # Avoid rate limits
     return results
 ```
 
