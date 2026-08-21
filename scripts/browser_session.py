@@ -50,11 +50,11 @@ class BrowserSession:
 
     def _initialize(self):
         """Initialize the browser session and navigate to NotebookLM"""
-        print(f"ð Creating session {self.id}...")
+        print(f"🚀 Creating session {self.id}...")
 
         # Create new page (tab) in context
         self.page = self.context.new_page()
-        print(f"  ð Navigating to NotebookLM...")
+        print(f"  🌐 Navigating to NotebookLM...")
 
         try:
             # Navigate to notebook
@@ -71,10 +71,10 @@ class BrowserSession:
             self.stealth.random_mouse_movement(self.page)
             self.stealth.random_delay(300, 600)
 
-            print(f"â Session {self.id} ready!")
+            print(f"✅ Session {self.id} ready!")
 
         except Exception as e:
-            print(f"â Failed to initialize session: {e}")
+            print(f"❌ Failed to initialize session: {e}")
             if self.page:
                 self.page.close()
             raise
@@ -86,7 +86,7 @@ class BrowserSession:
             self.page.wait_for_selector("textarea.query-box-input", timeout=10000, state="visible")
         except Exception:
             # Try alternative selector
-            self.page.wait_for_selector('textarea[aria-label="Feld fÃ¼r Anfragen"]', timeout=5000, state="visible")
+            self.page.wait_for_selector('textarea[aria-label="Feld für Anfragen"]', timeout=5000, state="visible")
 
     def ask(self, question: str) -> Dict[str, Any]:
         """
@@ -102,7 +102,7 @@ class BrowserSession:
             self.last_activity = time.time()
             self.message_count += 1
 
-            print(f"ð¬ [{self.id}] Asking: {question}")
+            print(f"💬 [{self.id}] Asking: {question}")
 
             # Snapshot current answer to detect new response
             previous_answer = self._snapshot_latest_response()
@@ -112,7 +112,7 @@ class BrowserSession:
             try:
                 self.page.wait_for_selector(chat_input_selector, timeout=5000, state="visible")
             except Exception:
-                chat_input_selector = 'textarea[aria-label="Feld fÃ¼r Anfragen"]'
+                chat_input_selector = 'textarea[aria-label="Feld für Anfragen"]'
                 self.page.wait_for_selector(chat_input_selector, timeout=5000, state="visible")
 
             # Click and type with human-like behavior
@@ -126,7 +126,7 @@ class BrowserSession:
             self.page.keyboard.press("Enter")
 
             # Wait for response
-            print("  â³ Waiting for response...")
+            print("  ⏳ Waiting for response...")
             self.stealth.random_delay(1500, 3000)
 
             # Get new answer
@@ -135,7 +135,7 @@ class BrowserSession:
             if not answer:
                 raise Exception("Empty response from NotebookLM")
 
-            print(f"  â Got response ({len(answer)} chars)")
+            print(f"  ✅ Got response ({len(answer)} chars)")
 
             return {
                 "status": "success",
@@ -146,7 +146,7 @@ class BrowserSession:
             }
 
         except Exception as e:
-            print(f"  â Error: {e}")
+            print(f"  ❌ Error: {e}")
             return {
                 "status": "error",
                 "question": question,
@@ -208,7 +208,7 @@ class BrowserSession:
 
     def reset(self):
         """Reset the chat by reloading the page"""
-        print(f"ð Resetting session {self.id}...")
+        print(f"🔄 Resetting session {self.id}...")
 
         self.page.reload(wait_until="domcontentloaded")
         self._wait_for_ready()
@@ -217,20 +217,20 @@ class BrowserSession:
         self.message_count = 0
         self.last_activity = time.time()
 
-        print(f"â Session reset (cleared {previous_count} messages)")
+        print(f"✅ Session reset (cleared {previous_count} messages)")
         return previous_count
 
     def close(self):
         """Close this session and clean up resources"""
-        print(f"ð Closing session {self.id}...")
+        print(f"🛑 Closing session {self.id}...")
 
         if self.page:
             try:
                 self.page.close()
             except Exception as e:
-                print(f"  â ï¸ Error closing page: {e}")
+                print(f"  ⚠️ Error closing page: {e}")
 
-        print(f"â Session {self.id} closed")
+        print(f"✅ Session {self.id} closed")
 
     def get_info(self) -> Dict[str, Any]:
         """Get information about this session"""
