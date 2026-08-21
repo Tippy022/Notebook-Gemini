@@ -9,7 +9,6 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Any
 
-
 class CleanupManager:
     """
     Manages cleanup of NotebookLM skill data
@@ -175,13 +174,13 @@ class CleanupManager:
                             path.unlink()
                         deleted_items.append(str(path))
                         deleted_size += item_info['size']
-                        print(f"  â Deleted: {path.name}")
+                        print(f" Deleted: {path.name}")
                 except Exception as e:
                     failed_items.append({
                         'path': str(path),
                         'error': str(e)
                     })
-                    print(f"  â Failed: {path.name} ({e})")
+                    print(f" Failed: {path.name} ({e})")
 
         # Recreate browser_state dir if everything was deleted
         if not preserve_library and not failed_items:
@@ -200,28 +199,27 @@ class CleanupManager:
         """Print a preview of what will be cleaned"""
         data = self.get_cleanup_paths(preserve_library)
 
-        print("\nð Cleanup Preview")
+        print("\n Cleanup Preview")
         print("=" * 60)
 
         for category, items in data['categories'].items():
             if items:
-                print(f"\nð {category.replace('_', ' ').title()}:")
+                print(f"\n {category.replace('_', ' ').title()}:")
                 for item in items:
                     path = Path(item['path'])
                     size_str = self._format_size(item['size'])
-                    type_icon = "ð" if item['type'] == 'dir' else "ð"
-                    print(f"  {type_icon} {path.name:<30} {size_str:>10}")
+                    type_icon = "" if item['type'] == 'dir' else ""
+                    print(f" {type_icon} {path.name:<30} {size_str:>10}")
 
         print("\n" + "=" * 60)
         print(f"Total items: {data['total_items']}")
         print(f"Total size: {self._format_size(data['total_size'])}")
 
         if preserve_library:
-            print("\nð Library will be preserved")
+            print("\n Library will be preserved")
 
         print("\nThis preview shows what would be deleted.")
         print("Use --confirm to actually perform the cleanup.")
-
 
 def main():
     """Command-line interface for cleanup management"""
@@ -272,8 +270,8 @@ Examples:
         if not args.force:
             manager.print_cleanup_preview(args.preserve_library)
 
-            print("\nâ ï¸  WARNING: This will delete the files shown above!")
-            print("   Note: .venv is preserved (part of skill infrastructure)")
+            print("\n WARNING: This will delete the files shown above!")
+            print(" Note: .venv is preserved (part of skill infrastructure)")
             response = input("Are you sure? (yes/no): ")
 
             if response.lower() != 'yes':
@@ -281,22 +279,21 @@ Examples:
                 return
 
         # Perform cleanup
-        print("\nðï¸ Performing cleanup...")
+        print("\n Performing cleanup...")
         result = manager.perform_cleanup(args.preserve_library, dry_run=False)
 
-        print(f"\nâ Cleanup complete!")
-        print(f"  Deleted: {result['deleted_count']} items")
-        print(f"  Freed: {manager._format_size(result['deleted_size'])}")
+        print(f"\n Cleanup complete!")
+        print(f" Deleted: {result['deleted_count']} items")
+        print(f" Freed: {manager._format_size(result['deleted_size'])}")
 
         if result['failed_count'] > 0:
-            print(f"  â ï¸ Failed: {result['failed_count']} items")
+            print(f" Failed: {result['failed_count']} items")
 
     else:
         # Just show preview
         manager.print_cleanup_preview(args.preserve_library)
-        print("\nð¡ Note: Virtual environment (.venv) is never deleted")
-        print("   It's part of the skill infrastructure, not user data")
-
+        print("\n Note: Virtual environment (.venv) is never deleted")
+        print(" It's part of the skill infrastructure, not user data")
 
 if __name__ == "__main__":
     main()
