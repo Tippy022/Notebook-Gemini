@@ -6,12 +6,12 @@ Advanced patterns for using the NotebookLM skill effectively.
 
 **Every command must use the run.py wrapper:**
 ```bash
-# â CORRECT:
+# CORRECT:
 python scripts/run.py auth_manager.py status
 python scripts/run.py ask_question.py --question "..."
 
-# â WRONG:
-python scripts/auth_manager.py status  # Will fail!
+# WRONG:
+python scripts/auth_manager.py status # Will fail!
 ```
 
 ## Pattern 1: Initial Setup
@@ -30,8 +30,8 @@ python scripts/run.py auth_manager.py setup
 python scripts/run.py notebook_manager.py add \
   --url "https://notebooklm.google.com/notebook/..." \
   --name "User provided name" \
-  --description "User provided description" \  # NEVER GUESS!
-  --topics "user,provided,topics"  # NEVER GUESS!
+  --description "User provided description" \ # NEVER GUESS!
+  --topics "user,provided,topics" # NEVER GUESS!
 ```
 
 **Critical Notes:**
@@ -126,15 +126,15 @@ python scripts/run.py ask_question.py --question "Same question"
 ```bash
 # If authentication fails
 python scripts/run.py auth_manager.py status
-python scripts/run.py auth_manager.py reauth  # Browser visible!
+python scripts/run.py auth_manager.py reauth # Browser visible!
 
 # If browser crashes
 python scripts/run.py cleanup_manager.py --preserve-library
-python scripts/run.py auth_manager.py setup  # Browser visible!
+python scripts/run.py auth_manager.py setup # Browser visible!
 
 # If rate limited
 # Wait or switch accounts
-python scripts/run.py auth_manager.py reauth  # Login with different account
+python scripts/run.py auth_manager.py reauth # Login with different account
 ```
 
 ## Pattern 7: Batch Processing
@@ -153,7 +153,7 @@ for question in "${QUESTIONS[@]}"; do
     python scripts/run.py ask_question.py \
         --question "$question" \
         --notebook-id "$NOTEBOOK_ID"
-    sleep 2  # Avoid rate limits
+    sleep 2 # Avoid rate limits
 done
 ```
 
@@ -327,12 +327,12 @@ for q in questions:
 python scripts/run.py [script].py [args]
 
 # Common operations
-run.py auth_manager.py status          # Check auth
-run.py auth_manager.py setup           # Login (browser visible!)
-run.py notebook_manager.py list        # List notebooks
-run.py notebook_manager.py add ...     # Add (ask user for metadata!)
-run.py ask_question.py --question ...  # Query
-run.py cleanup_manager.py ...          # Clean up
+run.py auth_manager.py status # Check auth
+run.py auth_manager.py setup # Login (browser visible!)
+run.py notebook_manager.py list # List notebooks
+run.py notebook_manager.py add ... # Add (ask user for metadata!)
+run.py ask_question.py --question ... # Query
+run.py cleanup_manager.py ... # Clean up
 ```
 
 **Remember:** When in doubt, use run.py and ask the user for notebook details!
